@@ -9,16 +9,10 @@
 #define MT_H_
 
 #include <utils/Thread.h>
+#include <utils/Mutex.h>
 using namespace android;
 
 #include "common.h"
-
-struct FRAME {
-	unsigned char len; /* length of data */
-	unsigned char cmd0;
-	unsigned char cmd1;
-	unsigned char *data;
-};
 
 /*
 struct SRSP {
@@ -32,7 +26,7 @@ struct SRSP {
 };
 */
 
-struct SREQ {
+struct REQ {
 	FRAME *frame;
 	bool senderror;
 	FRAME *result;
@@ -49,7 +43,7 @@ public:
 
 private:
 	static int ufd;
-	static SREQ sreq;
+	static REQ sreq;
 	static Mutex *mutexsend;
 	//static Condition *condsend;
 	static Mutex *mutexcomp;
@@ -57,12 +51,13 @@ private:
 	static Mutex *sendcomp; /* send complete */
 
 	AREQHANDLE areqhandle;
+	bool threadLoop();
 
 private:
 	int initUart(void);
 	int initSignal(void);
 	static unsigned char calcFCS(unsigned char *pMsg,
-			unsigned char len, unsigned char fcs = 0);
+			unsigned char len, unsigned char fcs);
 	void handleRecvFrame(FRAME *frame);
 	static void sigusr1(int sig);
 };

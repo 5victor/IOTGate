@@ -11,14 +11,34 @@
 #include <utils/Thread.h>
 using namespace android;
 
+#include "MT.h"
+#include "common.h"
+#include "debug.h"
+#include "indicate.h"
 
 class ZNP {
-private:
-
 public:
 	ZNP();
 	virtual ~ZNP();
+	int initZNP();
+	void setINDICATEhandle(INDICATE handle);
 
+public:
+	//MT_SYS
+	int SYS_PING();
+
+public:
+	//MT_SAPI
+	int ZB_START_REQUEST();
+
+	int ZB_WRITE_CONFIGURATION(unsigned char configID, int len, unsigned char *buf);
+
+private:
+	MT *mt;
+	INDICATE indicate;
+
+private:
+	static void handleAREQ(FRAME *frame);
 };
 
 #endif /* ZNP_H_ */
