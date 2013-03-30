@@ -13,9 +13,9 @@ int main()
 	int ret;
 
 	ZNP *znp = new ZNP();
-	ret = znp->initMT();
+	ret = znp->initZNP();
 	if (ret)
-		printf("initMT fail");
+		printf("initZNP fail");
 
 	ret = znp->SYS_PING();
 	printf("SYS_PING:0x%x", ret);

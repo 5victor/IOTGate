@@ -65,7 +65,7 @@ int MT::initUart(void)
 {
 	struct termios options;
 	int ctrlbits;
-	ufd = open("/dev/ttySAC1", O_RDWR | O_NOCTTY);
+	ufd = open("/dev/ttySAC3", O_RDWR | O_NOCTTY);
 	if (ufd < 0)
 		return ufd;
 
@@ -76,12 +76,12 @@ int MT::initUart(void)
 		D("%s:disconnect", __FUNCTION__);
 
 	tcgetattr(ufd, &options);
-	cfsetispeed(&options, B115200);
-	cfsetospeed(&options, B115200);
+	cfsetispeed(&options, B38400);
+	cfsetospeed(&options, B38400);
 	options.c_cflag &= ~CSIZE;
 	options.c_cflag |= CS8;
 //	options.c_cflag |= C_RTSCTS;
-	options.c_cflag |= CRTSCTS;
+//	options.c_cflag |= CRTSCTS;
 
 	tcsetattr(ufd, TCSANOW, &options);
 	return 0;

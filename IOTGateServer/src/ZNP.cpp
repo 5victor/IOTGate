@@ -48,7 +48,7 @@ int ZNP::ZB_WRITE_CONFIGURATION(unsigned char configID, int len, unsigned char *
 	frame->len = len + 2;
 	frame->cmd0 = 0x26;
 	frame->cmd1 = 0x05;
-	frame->data = malloc(frame->len);
+	frame->data = (unsigned char*)malloc(frame->len);
 	frame->data[0] = configID;
 	frame->data[1] = len;
 	memcpy(&frame->data[2], buf, len);
