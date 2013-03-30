@@ -18,5 +18,5 @@ int main()
 		printf("initZNP fail");
 
 	ret = znp->SYS_PING();
-	printf("SYS_PING:0x%x", ret);
+	printf("SYS_PING:0x%x\n", ret);
 }

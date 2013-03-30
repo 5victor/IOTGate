@@ -12,6 +12,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/ioctl.h>
+#include <string.h>
 
 #include "MT.h"
 #include "debug.h"
@@ -80,8 +81,9 @@ int MT::initUart(void)
 	cfsetospeed(&options, B38400);
 	options.c_cflag &= ~CSIZE;
 	options.c_cflag |= CS8;
-//	options.c_cflag |= C_RTSCTS;
 //	options.c_cflag |= CRTSCTS;
+	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); /*Input*/
+	options.c_oflag &= ~OPOST;   /*Output*/
 
 	tcsetattr(ufd, TCSANOW, &options);
 	return 0;
@@ -103,9 +105,74 @@ unsigned char MT::calcFCS(unsigned char *pMsg,
 	return fcs;
 }
 
-bool MT::threadLoop()
+FRAME *MT::recvFrame()
 {
 #define BUF_SIZE 512
+	int ret;
+	int i;
+	unsigned char ch;
+	unsigned char buf[BUF_SIZE];
+	int len;
+	int num;
+	int start;
+	unsigned char fcs;
+	FRAME *frame;
+
+	D("%s", __FUNCTION__);
+
+	do {
+		ret = read(ufd, &ch, 1);
+		if (ret == 1 && ch == 0xFE)
+			break;
+		else if (ret < 0)
+			return NULL;
+		D("%s:char != 0xFE", __FUNCTION__);
+	} while(1);
+	D("%s:recv 0xFE", __FUNCTION__);
+	do {
+		ret = read(ufd, &ch, 1);
+		if (ret == 1) {
+			len = ch;
+			break;
+		} else if (ret < 0)
+			return NULL;
+	} while (1);
+	D("%s:len=%d", __FUNCTION__, len);
+	num = len + 3; /* CMD0, CMD1, DATA, FCS */
+	start = 0;
+	do {
+		ret = read(ufd, &buf[start], num);
+		if (ret > 0) {
+			start += ret;
+			num -= ret;
+			if (num)
+				continue;
+			else
+				break;
+		} else if (ret < 0)
+			return NULL;
+	} while(1);
+
+	fcs = calcFCS((unsigned char *)&len, 1, 0); /* len */
+	fcs = calcFCS(buf, len + 2, fcs); /* cmd0, cmd1, data */
+	if (fcs != buf[len + 2]) {
+		D("%s:FCS check fail, should %d, but %d", __FUNCTION__, fcs, buf[len + 2]);
+		return NULL;
+	}
+
+	frame = new FRAME();
+	frame->len = len;
+	frame->cmd0 = buf[0];
+	frame->cmd1 = buf[1];
+	frame->data = new unsigned char[len];
+	memcpy(frame->data, &buf[2], len);
+	D("%s:Get one Frame len=%d,cmd0=0x%x,cmd1=0x%x", __FUNCTION__, frame->len, frame->cmd0, frame->cmd1);
+
+	return frame;
+}
+
+bool MT::threadLoop()
+{
 	unsigned char buf[BUF_SIZE];
 	bool receving;
 	int ret;
@@ -114,66 +181,9 @@ bool MT::threadLoop()
 	int recevied;
 	D("MT::threadLoop start");
 	do {
-		D("%s:start read", __FUNCTION__);
-		ret = read(ufd, buf, sizeof(buf));
-		if (ret < 0) {
-			D("MT::threadLoop read error:%d", ret);
-			continue;
-		}
-		D("%s:read %d bytes", __FUNCTION__, ret);
-		if (!receving) {
-			if (buf[0] != 0xFE) {
-				D("Frame first byte != 0xFE");
-				continue;
-			}
-			frame = new FRAME;
-			frame->len	= buf[1];
-			frame->cmd0	= buf[2];
-			frame->cmd1	= buf[3];
-			frame->data = new unsigned char[frame->len];
-			D("%s:len=%d,cmd0=0x%x,cmd1=0x%x", __FUNCTION__, frame->len, frame->cmd0, frame->cmd1);
-			if (frame->len+5 > sizeof(buf)) { //FCS,LEN,CMD0,CMD1,FCS
-				D("%s:Multiltime read", __FUNCTION__);
-				fcs = calcFCS(&buf[1], sizeof(buf)-1, 0);
-				memcpy(frame->data, &buf[4], sizeof(buf)-4);
-				recevied = sizeof(buf)-4;
-				receving = true;
-			} else {
-				fcs = calcFCS(&buf[1], frame->len+3, 0);
-				if (fcs != buf[4+frame->len]) {
-					D("Frame FCS Check Fail");
-					delete frame->data;
-					delete frame;
-					continue;
-				}
-				memcpy(frame->data, &buf[4], frame->len);
-				D("%s:recv a good frame", __FUNCTION__);
+			frame = recvFrame();
+			if (frame != NULL)
 				handleRecvFrame(frame);
-			}
-			continue;
-		} else {
-			//the condition that have more than two recvie
-			if (frame->len > (recevied+(sizeof(buf)-1))) {
-				fcs = calcFCS(buf, sizeof(buf), fcs);
-				memcpy(&frame->data[recevied], buf, sizeof(buf));
-				recevied += sizeof(buf);
-				continue;
-			} else {
-				fcs = calcFCS(buf, frame->len-recevied, fcs);
-				if (fcs != buf[frame->len-recevied]) {
-					D("Frame FCS Check Fail");
-					recevied = 0;
-					receving = false;
-					delete frame->data;
-					delete frame;
-				}
-				memcpy(&frame->data[recevied], buf, frame->len-recevied);
-				recevied = 0;
-				receving = false;
-				handleRecvFrame(frame);
-				continue;
-			}
-		}
 	} while(1);
 
 	return true;
@@ -182,8 +192,9 @@ bool MT::threadLoop()
 void MT::handleRecvFrame(FRAME *frame)
 {
 	if (sreq.frame != NULL) {
-		if ((sreq.frame->cmd0 & 0xFF) == (sreq.frame->cmd1 &0xFF)) {
+		if ((sreq.frame->cmd0 & 0xFF) == (sreq.frame->cmd0 &0xFF)) {
 			if (sreq.frame->cmd1 == frame->cmd1) {
+				D("%s:SRSP cmd0=0x%x, cmd1=0x%x", __FUNCTION__, frame->cmd0, frame->cmd1);
 				sreq.result = frame;
 				condcomp->signal();
 				return;
@@ -220,12 +231,13 @@ FRAME *MT::sendSREQ(FRAME *send)
 		result = NULL;
 		goto out;
 	}
-
+	D("%s:send complete and have no error\n", __FUNCTION__);
 	mutexcomp->lock();
 	condcomp->wait(*mutexcomp);
+	D("%s: recv SRSP", __FUNCTION__);
 
 	//result = sreq.error ? NULL:sreq.result;
-
+	result = sreq.result;
 out:
 	mutexsend->unlock();
 //	delete sreq.frame->data;

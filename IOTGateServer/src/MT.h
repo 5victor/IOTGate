@@ -60,6 +60,7 @@ private:
 			unsigned char len, unsigned char fcs);
 	void handleRecvFrame(FRAME *frame);
 	static void sigusr1(int sig);
+	FRAME *recvFrame();
 };
 
 #endif /* MT_H_ */
