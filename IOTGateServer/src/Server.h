@@ -14,23 +14,24 @@ using namespace android;
 #include <vector>
 using namespace std;
 #include "Node.h"
+#include "ZNP.h"
 
 class Server {
 public:
 	Server();
 	virtual ~Server();
+	int initServer();
 
 private:
-	static struct indicate *indicate;
-	static Mutex *mutex;
-	static Condition *cond;
+//	static struct indicate *indicate;
 
 private:
 	static void indicateHandle(struct indicate *areq);
-	void waitIndicate(areq_type type);
+//	void waitIndicate(areq_type type);
 
 private:
-	vector<Node> node;
+	static vector<Node> node;
+	ZNP *znp;
 };
 
 #endif /* SERVER_H_ */

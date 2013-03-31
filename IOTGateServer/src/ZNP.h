@@ -22,6 +22,7 @@ public:
 	virtual ~ZNP();
 	int initZNP();
 	void setINDICATEhandle(INDICATE handle);
+	FRAME *waitAREQ(int cmd0, int cmd1);
 
 public:
 	//MT_SYS
@@ -39,6 +40,14 @@ private:
 
 private:
 	static void handleAREQ(FRAME *frame);
+
+private:
+	static Mutex *mutex;
+	static Mutex *mutexwait;
+	static Condition *condwait;
+	static int cmd0;
+	static int cmd1;
+	static FRAME *waitframe;
 };
 
 #endif /* ZNP_H_ */

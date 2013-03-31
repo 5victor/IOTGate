@@ -16,13 +16,8 @@ Server::~Server() {
 	// TODO Auto-generated destructor stub
 }
 
-void Server::waitIndicate(areq_type type)
+int Server::initServer()
 {
-	do {
-		mutex->lock();
-		cond->wait(*mutex);
-
-		if (type == indicate->type)
-			break;
-	} while(1);
+	znp = new ZNP();
+	znp->initZNP();
 }

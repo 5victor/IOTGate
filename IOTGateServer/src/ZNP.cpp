@@ -9,9 +9,20 @@
 #include <fcntl.h>
 #include <stdlib.h>
 
+Mutex *ZNP::mutex;
+Mutex *ZNP::mutexwait;
+Condition *ZNP::condwait;
+int ZNP::cmd0;
+int ZNP::cmd1;
+FRAME *ZNP::waitframe;
+
 ZNP::ZNP() {
 	// TODO Auto-generated constructor stub
-
+	mutex = new Mutex(Mutex::SHARED);
+	mutexwait = new Mutex(Mutex::SHARED);
+	condwait = new Condition(Condition::SHARED);
+	cmd0 = 0;
+	cmd1 = 0;
 }
 
 ZNP::~ZNP() {
@@ -22,6 +33,22 @@ int ZNP::initZNP()
 {
 	mt = new MT();
 	return mt->start();
+}
+
+FRAME *ZNP::waitAREQ(int cmd0, int cmd1)
+{
+	mutex->lock();
+	this->cmd0 = cmd0;
+	this->cmd1 = cmd1;
+
+	mutexwait->lock();
+	condwait->wait(*mutexwait);
+
+	this->cmd0 = 0;
+	this->cmd1 = 0;
+
+	mutex->unlock();
+	return waitframe;
 }
 
 void ZNP::setINDICATEhandle(INDICATE handle)
@@ -59,6 +86,13 @@ int ZNP::ZB_WRITE_CONFIGURATION(unsigned char configID, int len, unsigned char *
 
 void ZNP::handleAREQ(FRAME *frame)
 {
+
+	if ((frame->cmd0 == cmd0) && (frame->cmd1 == cmd1)) {
+		ZNP::waitframe = frame;
+		condwait->signal();
+		return ;
+	}
+
 	int cmd0 = frame->cmd0 & 0xF;
 
 	D("%s:cmd0=0x%x,cmd1=0x%x", __FUNCTION__, frame->cmd0, frame->cmd1);
