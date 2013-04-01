@@ -6,17 +6,26 @@
  */
 
 #include <stdio.h>
-#include "ZNP.h"
+#include "Server.h"
 
 int main()
 {
 	int ret;
+	ZNP *znp;
 
-	ZNP *znp = new ZNP();
-	ret = znp->initZNP();
+	Server *server = new Server();
+	ret = server->initServer();
 	if (ret)
-		printf("initZNP fail");
+		printf("initServer fail");
 
-	ret = znp->SYS_PING();
-	printf("SYS_PING:0x%x\n", ret);
+	ret = server->startNetwork(513);
+	D("startNetwork:%d\n", ret);
+
+	znp = server->getZNP();
+
+	znp->ZDO_IEEE_ADDR_REQ(0x1234, 0, 0);
+
+	while(1);
+
+	return 0;
 }

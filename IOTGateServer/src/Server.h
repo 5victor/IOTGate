@@ -21,6 +21,8 @@ public:
 	Server();
 	virtual ~Server();
 	int initServer();
+	int startNetwork(int panid, unsigned int chanlist = 0x00008000);
+	ZNP *getZNP();
 
 private:
 //	static struct indicate *indicate;

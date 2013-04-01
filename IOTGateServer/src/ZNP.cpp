@@ -32,6 +32,7 @@ ZNP::~ZNP() {
 int ZNP::initZNP()
 {
 	mt = new MT();
+	mt->setAREQHandle(&ZNP::handleAREQ);
 	return mt->start();
 }
 
@@ -41,8 +42,10 @@ FRAME *ZNP::waitAREQ(int cmd0, int cmd1)
 	this->cmd0 = cmd0;
 	this->cmd1 = cmd1;
 
-	mutexwait->lock();
+	D("%s", __FUNCTION__);
+	Mutex::Autolock _l(*mutexwait);
 	condwait->wait(*mutexwait);
+	D("%s:waitAREQ Success", __FUNCTION__);
 
 	this->cmd0 = 0;
 	this->cmd1 = 0;
@@ -58,6 +61,7 @@ void ZNP::setINDICATEhandle(INDICATE handle)
 
 int ZNP::SYS_PING()
 {
+	int ret;
 	FRAME *result;
 	FRAME *frame = new FRAME();
 	frame->len = 0;
@@ -65,13 +69,18 @@ int ZNP::SYS_PING()
 	frame->cmd1 = 0x01;
 
 	result = mt->sendSREQ(frame);
-	return ((short *)result->data)[0];
+	ret = ((short *)result->data)[0];
+	delete result->data;
+	delete result;
+	return ret;
 }
 
 int ZNP::ZB_WRITE_CONFIGURATION(unsigned char configID, int len, unsigned char *buf)
 {
 	FRAME *result;
 	FRAME *frame = new FRAME();
+	int ret;
+
 	frame->len = len + 2;
 	frame->cmd0 = 0x26;
 	frame->cmd1 = 0x05;
@@ -80,12 +89,55 @@ int ZNP::ZB_WRITE_CONFIGURATION(unsigned char configID, int len, unsigned char *
 	frame->data[1] = len;
 	memcpy(&frame->data[2], buf, len);
 
+	//delete buf; may be: int a; &a;
 	result = mt->sendSREQ(frame);
-	return ((unsigned char *)result->data)[0];
+	ret = ((unsigned char *)result->data)[0];
+	delete result->data;
+	delete result;
+	return ret;
+}
+
+int ZNP::ZB_START_REQUEST()
+{
+	FRAME *frame = new FRAME();
+	FRAME *result;
+	int ret;
+
+	frame->len = 0;
+	frame->cmd0 = 0x26;
+	frame->cmd1 = 0x00;
+
+	result = mt->sendSREQ(frame);
+	ret = ((unsigned char *)result->data)[0];
+	delete result->data;
+	delete result;
+	return ret;
+}
+
+int ZNP::ZDO_IEEE_ADDR_REQ(unsigned short shortaddr, unsigned char type, unsigned char index)
+{
+	FRAME *frame = new FRAME();
+	FRAME *result;
+	int ret;
+
+	frame->len = 4;
+	frame->cmd0 = 0x25;
+	frame->cmd1 = 0x01;
+	frame->data = new unsigned char[4];
+	((unsigned short *)frame->data)[0] = shortaddr;
+	frame->data[2] = type;
+	frame->data[3] = index;
+
+	result = mt->sendSREQ(frame);
+	ret = ((unsigned char *)result->data)[0];
+	delete result->data;
+	delete result;
+	return ret;
 }
 
 void ZNP::handleAREQ(FRAME *frame)
 {
+	D("%s", __FUNCTION__);
 
 	if ((frame->cmd0 == cmd0) && (frame->cmd1 == cmd1)) {
 		ZNP::waitframe = frame;

@@ -205,6 +205,8 @@ void MT::handleRecvFrame(FRAME *frame)
 		if (areqhandle != NULL) {
 			areqhandle(frame);
 			return;
+		} else {
+			D("%s:areqhandle == NULL", __FUNCTION__);
 		}
 	}
 	D("handle RecvFrame have unprocess frame");
@@ -232,10 +234,12 @@ FRAME *MT::sendSREQ(FRAME *send)
 		goto out;
 	}
 	D("%s:send complete and have no error\n", __FUNCTION__);
-	mutexcomp->lock();
-	condcomp->wait(*mutexcomp);
-	D("%s: recv SRSP", __FUNCTION__);
 
+	{
+		Mutex::Autolock _l(*mutexcomp);
+		condcomp->wait(*mutexcomp);
+		D("%s: recv SRSP", __FUNCTION__);
+	}
 	//result = sreq.error ? NULL:sreq.result;
 	result = sreq.result;
 out:

@@ -11,6 +11,8 @@
 #include <vector>
 using namespace std;
 
+#include "Endpoint.h"
+
 class Node {
 public:
 	Node();

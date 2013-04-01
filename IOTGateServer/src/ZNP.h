@@ -34,6 +34,11 @@ public:
 
 	int ZB_WRITE_CONFIGURATION(unsigned char configID, int len, unsigned char *buf);
 
+public:
+	//MT_ZDO
+	int ZDO_IEEE_ADDR_REQ(unsigned short shortaddr, unsigned char type, unsigned char index);
+
+
 private:
 	MT *mt;
 	INDICATE indicate;
