@@ -16,24 +16,58 @@ using namespace std;
 #include "Node.h"
 #include "ZNP.h"
 
-class Server {
+class ZNP;
+
+class Server : public Thread {
 public:
 	Server();
 	virtual ~Server();
 	int initServer();
-	int startNetwork(int panid, unsigned int chanlist = 0x00008000);
+	void startServer();
 	ZNP *getZNP();
+	int startNetwork(int panid, unsigned int chanlist = 0x00008000);
+
+//commit command, run in threadLoop()
+public:
+	void foundNode(unsigned short nwkaddr);
+
+private:
+	void addNode(unsigned short nwkaddr);
 
 private:
 //	static struct indicate *indicate;
 
 private:
-	static void indicateHandle(struct indicate *areq);
+	void indicateHandle(struct indicate *areq);
 //	void waitIndicate(areq_type type);
+	int getNodelist(vector<unsigned short> list);
 
 private:
-	static vector<Node> node;
+	vector<Node *> nodes;
 	ZNP *znp;
+
+private:
+	enum Command {FOUND_NODE,};
+	Mutex *mutexcmd;
+	Condition *condcmd;
+
+	Mutex *cmdlock;
+
+	enum Command cmd;
+	struct {
+		union {
+			unsigned int udata;
+			int sdata;
+			unsigned char *buf;
+		};
+		int len;
+	}cmddata;
+
+	bool threadLoop();
+	void commitCommand(enum Command cmd);
+	void setSignData(int data);
+	void setUnsignData(unsigned int data);
+	void setBufData(unsigned char *buf, int len);
 };
 
 #endif /* SERVER_H_ */

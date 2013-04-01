@@ -15,6 +15,7 @@ Condition *ZNP::condwait;
 int ZNP::cmd0;
 int ZNP::cmd1;
 FRAME *ZNP::waitframe;
+Server *ZNP::server;
 
 ZNP::ZNP() {
 	// TODO Auto-generated constructor stub
@@ -29,10 +30,11 @@ ZNP::~ZNP() {
 	// TODO Auto-generated destructor stub
 }
 
-int ZNP::initZNP()
+int ZNP::initZNP(Server *server)
 {
 	mt = new MT();
 	mt->setAREQHandle(&ZNP::handleAREQ);
+	this->server = server;
 	return mt->start();
 }
 
@@ -53,6 +55,27 @@ FRAME *ZNP::waitAREQ(int cmd0, int cmd1)
 	mutex->unlock();
 	return waitframe;
 }
+
+FRAME *ZNP::waitAREQRelative(int cmd0, int cmd1, nsecs_t reltime)
+{
+	int ret;
+	mutex->lock();
+	this->cmd0 = cmd0;
+	this->cmd1 = cmd1;
+
+	D("%s", __FUNCTION__);
+	Mutex::Autolock _l(*mutexwait);
+	ret = condwait->waitRelative(*mutexwait, reltime);
+
+	D("%s:waitAREQ Success", __FUNCTION__);
+
+	this->cmd0 = 0;
+	this->cmd1 = 0;
+
+	mutex->unlock();
+	return ret ? NULL : waitframe;
+}
+
 
 void ZNP::setINDICATEhandle(INDICATE handle)
 {
@@ -144,6 +167,15 @@ void ZNP::handleAREQ(FRAME *frame)
 		condwait->signal();
 		return ;
 	}
+	/*
+	 * code above use the waitAREQ
+	 *
+	 * 有的AREQ被上面的代码wait掉了，想像这样一种情况，
+	 * 发现网络的设备的一个机制是使用ZDO_IEEE_ADDR_REQ
+	 * 但是如果我想真实的获取其IEEE ADDR呢，那么这个ZDO_IEEE_ADDR_RSP
+	 * 就要被wait掉，不能走下面代码，走下面代码就是发现网络中设备的实现了
+	 *
+	 */
 
 	int cmd0 = frame->cmd0 & 0xF;
 
@@ -173,11 +205,7 @@ void ZNP::handleAREQ(FRAME *frame)
 			break;
 		}
 	} else if (cmd0 == 0x05) {/* ZDO interface */
-		switch (frame->cmd1) {
-		default:
-			D("%s:unprocess cmd0=0x%x,cmd1=0x%x", __FUNCTION__, frame->cmd0, frame->cmd1);
-			break;
-		}
+		handleAREQZDO(frame);
 	} else if (cmd0 == 0x06) {/* SAPI interface */
 		switch (frame->cmd1) {
 		default:
@@ -209,4 +237,15 @@ void ZNP::handleAREQ(FRAME *frame)
 	if (frame->len)
 		delete frame->data;
 	delete frame;
+}
+
+void ZNP::handleAREQZDO(FRAME *frame)
+{
+	switch(frame->cmd1) {
+	case 0x81:
+		server->foundNode(*((unsigned short *)&frame->data[9]));
+		delete frame->data;
+		delete frame;
+		break;
+	}
 }

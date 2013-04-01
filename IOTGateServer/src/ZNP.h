@@ -15,14 +15,18 @@ using namespace android;
 #include "common.h"
 #include "debug.h"
 #include "indicate.h"
+#include "Server.h"
+
+class Server;
 
 class ZNP {
 public:
 	ZNP();
 	virtual ~ZNP();
-	int initZNP();
+	int initZNP(Server *server);
 	void setINDICATEhandle(INDICATE handle);
 	FRAME *waitAREQ(int cmd0, int cmd1);
+	FRAME *waitAREQRelative(int cmd0, int cmd1, nsecs_t reltime);
 
 public:
 	//MT_SYS
@@ -42,9 +46,11 @@ public:
 private:
 	MT *mt;
 	INDICATE indicate;
+	static Server *server;
 
 private:
 	static void handleAREQ(FRAME *frame);
+	static void handleAREQZDO(FRAME *frame);
 
 private:
 	static Mutex *mutex;

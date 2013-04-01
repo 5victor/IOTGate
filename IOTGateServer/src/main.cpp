@@ -15,14 +15,17 @@ int main()
 
 	Server *server = new Server();
 	ret = server->initServer();
+	server->startServer();
 	if (ret)
 		printf("initServer fail");
 
 	ret = server->startNetwork(513);
 	D("startNetwork:%d\n", ret);
 
+
 	znp = server->getZNP();
 
+	znp->ZDO_IEEE_ADDR_REQ(0xFFFC, 1, 0);
 	znp->ZDO_IEEE_ADDR_REQ(0x1234, 0, 0);
 
 	while(1);

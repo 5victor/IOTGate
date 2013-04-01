@@ -9,7 +9,9 @@
 
 Server::Server() {
 	// TODO Auto-generated constructor stub
-
+	mutexcmd = new Mutex(Mutex::SHARED);
+	condcmd = new Condition(Condition::SHARED);
+	cmdlock = new Mutex(Mutex::SHARED);
 }
 
 Server::~Server() {
@@ -19,7 +21,12 @@ Server::~Server() {
 int Server::initServer()
 {
 	znp = new ZNP();
-	return znp->initZNP();
+	return znp->initZNP(this);
+}
+
+void Server::startServer()
+{
+	this->run();
 }
 
 int Server::startNetwork(int panid, unsigned int chanlist)
@@ -89,4 +96,61 @@ int Server::startNetwork(int panid, unsigned int chanlist)
 ZNP *Server::getZNP()
 {
 	return znp;
+}
+
+void Server::foundNode(unsigned short nwkaddr)
+{
+	setUnsignData(nwkaddr);
+	commitCommand(FOUND_NODE);
+}
+
+void Server::setSignData(int data)
+{
+	cmddata.sdata = data;
+}
+void Server::setUnsignData(unsigned int data)
+{
+	cmddata.udata = data;
+}
+
+void Server::setBufData(unsigned char *buf, int len)
+{
+	cmddata.buf = buf;
+	cmddata.len = len;
+}
+
+void Server::commitCommand(enum Command cmd)
+{
+	cmdlock->lock();
+	this->cmd = cmd;
+	condcmd->signal();
+	cmdlock->unlock();
+}
+
+bool Server::threadLoop()
+{
+	while(1) {
+		{
+			Mutex::Autolock _l(mutexcmd);
+			condcmd->wait(*mutexcmd);
+		}
+		cmdlock->lock();
+		switch(cmd) {
+		case FOUND_NODE: {
+			addNode(cmddata.sdata);
+			break;
+		}
+		default:
+			D("Server::threadLoop: unkown command");
+		}
+		cmdlock->unlock();
+	}
+
+	return true;
+}
+
+
+void Server::addNode(unsigned short nwkaddr)
+{
+
 }
