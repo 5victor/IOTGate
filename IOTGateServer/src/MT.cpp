@@ -82,7 +82,8 @@ int MT::initUart(void)
 	options.c_cflag &= ~CSIZE;
 	options.c_cflag |= CS8;
 //	options.c_cflag |= CRTSCTS;
-	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG); /*Input*/
+	options.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG | IEXTEN); /*Control*/
+	options.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
 	options.c_oflag &= ~OPOST;   /*Output*/
 
 	tcsetattr(ufd, TCSANOW, &options);
