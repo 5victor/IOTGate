@@ -6,6 +6,8 @@ LOCAL_SRC_FILES := \
 	src/MT.cpp	\
 	src/ZNP.cpp	\
 	src/Server.cpp	\
+	src/Node.cpp	\
+	src/Endpoint.cpp	\
 	src/main.cpp
 
 LOCAL_C_INCLUDES += \

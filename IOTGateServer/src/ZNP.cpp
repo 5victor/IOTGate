@@ -158,18 +158,23 @@ void ZNP::handleAREQ(FRAME *frame)
 		D("recv error frame");
 	}
 
-	if (frame->len)
-		delete frame->data;
-	delete frame;
+	//if (frame->len)
+		//delete frame->data;
+	//delete frame;
 }
 
 void ZNP::handleAREQZDO(FRAME *frame)
 {
+	D("%s:cmd0=0x%x, cmd1=0x%x, len=%d", __FUNCTION__, frame->cmd0, frame->cmd1, frame->len);
 	switch(frame->cmd1) {
 	case 0x81:
-		server->foundNode(*((unsigned short *)&frame->data[9]));
-		delete frame->data;
-		delete frame;
+		server->foundNode(*((uint16_t *)&frame->data[9]));
+		freeFrame(frame);
+		break;
+	case 0xc1:
+		D("srcaddr:0x%x", *(uint16_t *)frame->data);
+		server->foundNode(*((uint16_t *)&frame->data[2]));
+		freeFrame(frame);
 		break;
 	}
 }
@@ -188,7 +193,7 @@ FRAME *ZNP::sendSREQ(int cmd0, int cmd1)
 	return result;
 }
 
-FRAME *ZNP::sendSREQ(int cmd0, int cmd1, int len, unsigned char *buf)
+FRAME *ZNP::sendSREQ(int cmd0, int cmd1, int len, uint8_t *buf)
 {
 	FRAME *result;
 	FRAME *frame = new FRAME();
@@ -204,14 +209,14 @@ FRAME *ZNP::sendSREQ(int cmd0, int cmd1, int len, unsigned char *buf)
 }
 
 
-unsigned char ZNP::getRet1Byte(FRAME *frame)
+uint8_t ZNP::getRet1Byte(FRAME *frame)
 {
-	return *((unsigned char *)(&frame->data[0]));
+	return *((uint8_t *)(&frame->data[0]));
 }
 
-unsigned short ZNP::getRet2Byte(FRAME *frame)
+uint16_t ZNP::getRet2Byte(FRAME *frame)
 {
-	return *((unsigned short *)(&frame->data[0]));
+	return *((uint16_t *)(&frame->data[0]));
 }
 
 int ZNP::sendAREQ(int cmd0, int cmd1)
@@ -245,12 +250,12 @@ int ZNP::SYS_PING()
 	return ret;
 }
 
-int ZNP::ZB_WRITE_CONFIGURATION(unsigned char configID, int len, unsigned char *buf)
+int ZNP::ZB_WRITE_CONFIGURATION(uint8_t configID, int len, uint8_t *buf)
 {
 	FRAME *result;
 	int ret;
 
-	unsigned char *data = new unsigned char[len+2];
+	uint8_t *data = new uint8_t[len+2];
 
 	data[0] = configID;
 	data[1] = len;
@@ -273,15 +278,15 @@ int ZNP::ZB_START_REQUEST()
 	return !result;
 }
 
-int ZNP::ZDO_IEEE_ADDR_REQ(unsigned short shortaddr, unsigned char type, unsigned char index)
+int ZNP::ZDO_IEEE_ADDR_REQ(uint16_t shortaddr, uint8_t type, uint8_t index)
 {
 	FRAME *result;
 	int ret;
-	unsigned char *data;
+	uint8_t *data;
 
-	data = new unsigned char[4];
+	data = new uint8_t[4];
 
-	((unsigned short *)data)[0] = shortaddr;
+	((uint16_t *)data)[0] = shortaddr;
 	data[2] = type;
 	data[3] = index;
 
@@ -293,5 +298,51 @@ int ZNP::ZDO_IEEE_ADDR_REQ(unsigned short shortaddr, unsigned char type, unsigne
 	return ret;
 }
 
+int ZNP::ZDO_NODE_DESC_REQ(uint16_t nwkaddr)
+{
+	uint16_t data[2];
+	FRAME *result;
+	int ret;
 
+	data[0] = nwkaddr;
+	data[1] = nwkaddr;
+
+	result = sendSREQ(0x25, 0x02, 4, (uint8_t *)data);
+
+	ret = getRet1Byte(result);
+	freeFrame(result);
+	return ret;
+}
+
+int ZNP::ZDO_ACTIVE_EP_REQ(uint16_t nwkaddr)
+{
+	uint16_t data[2];
+	FRAME *result;
+	int ret;
+
+	data[0] = nwkaddr;
+	data[1] = nwkaddr;
+
+	result = sendSREQ(0x25, 0x05, 4, (uint8_t *)data);
+	ret = getRet1Byte(result);
+	freeFrame(result);
+	return ret;
+}
+
+int ZNP::ZDO_SIMPLE_DESC_REQ(uint16_t nwkaddr, uint8_t endpoint)
+{
+	uint8_t data[5];
+	uint16_t *wdata = (uint16_t *)data;
+	FRAME *result;
+	int ret;
+
+	wdata[0] = nwkaddr;
+	wdata[1] = nwkaddr;
+	data[4] = endpoint;
+
+	result = sendSREQ(0x25, 0x4, 5, data);
+	ret = getRet1Byte(result);
+	freeFrame(result);
+	return ret;
+}
 

@@ -29,10 +29,12 @@ public:
 
 //commit command, run in threadLoop()
 public:
-	void foundNode(unsigned short nwkaddr);
+	void foundNode(uint16_t nwkaddr);
 
 private:
-	void addNode(unsigned short nwkaddr);
+	int addNode(uint16_t nwkaddr);
+	int getNodeEndpoints(uint16_t nwkaddr, vector<Endpoint *> &endpoints);
+	Endpoint *getEndpoint(uint16_t nwkaddr, int index);
 
 private:
 //	static struct indicate *indicate;
@@ -40,7 +42,7 @@ private:
 private:
 	void indicateHandle(struct indicate *areq);
 //	void waitIndicate(areq_type type);
-	int getNodelist(vector<unsigned short> list);
+	int getNodelist(vector<uint16_t> list);
 
 private:
 	vector<Node *> nodes;

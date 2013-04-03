@@ -31,9 +31,9 @@ public:
 private:
 	FRAME *sendSREQ(int cmd0, int cmd1);
 	// doesn't free buf
-	FRAME *sendSREQ(int cmd0, int cmd1, int len, unsigned char *buf);
-	unsigned char getRet1Byte(FRAME *frame);
-	unsigned short getRet2Byte(FRAME *frame);
+	FRAME *sendSREQ(int cmd0, int cmd1, int len, uint8_t *buf);
+	uint8_t getRet1Byte(FRAME *frame);
+	uint16_t getRet2Byte(FRAME *frame);
 	int sendAREQ(int cmd0, int cmd1);
 
 public:
@@ -46,11 +46,14 @@ public:
 	//MT_SAPI
 	int ZB_START_REQUEST();
 
-	int ZB_WRITE_CONFIGURATION(unsigned char configID, int len, unsigned char *buf);
+	int ZB_WRITE_CONFIGURATION(uint8_t configID, int len, uint8_t *buf);
 
 public:
 	//MT_ZDO
-	int ZDO_IEEE_ADDR_REQ(unsigned short shortaddr, unsigned char type, unsigned char index);
+	int ZDO_IEEE_ADDR_REQ(uint16_t shortaddr, uint8_t type, uint8_t index);
+	int ZDO_NODE_DESC_REQ(uint16_t nwkaddr);
+	int ZDO_ACTIVE_EP_REQ(uint16_t nwkaddr);
+	int ZDO_SIMPLE_DESC_REQ(uint16_t nwkaddr, uint8_t endpoint);
 
 
 private:

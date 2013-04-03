@@ -95,10 +95,10 @@ int MT::initSignal(void)
 	return -(SIG_ERR == signal(SIGUSR1,MT::sigusr1));
 }
 
-unsigned char MT::calcFCS(unsigned char *pMsg,
-		unsigned char len, unsigned char fcs)
+uint8_t MT::calcFCS(uint8_t *pMsg,
+		uint8_t len, uint8_t fcs)
 {
-//	unsigned char result = fcs;
+//	uint8_t result = fcs;
 	while(len--)
 	{
 		fcs ^= *pMsg++;
@@ -111,12 +111,12 @@ FRAME *MT::recvFrame()
 #define BUF_SIZE 512
 	int ret;
 	int i;
-	unsigned char ch;
-	unsigned char buf[BUF_SIZE];
+	uint8_t ch;
+	uint8_t buf[BUF_SIZE];
 	int len;
 	int num;
 	int start;
-	unsigned char fcs;
+	uint8_t fcs;
 	FRAME *frame;
 
 	D("%s", __FUNCTION__);
@@ -154,7 +154,7 @@ FRAME *MT::recvFrame()
 			return NULL;
 	} while(1);
 
-	fcs = calcFCS((unsigned char *)&len, 1, 0); /* len */
+	fcs = calcFCS((uint8_t *)&len, 1, 0); /* len */
 	fcs = calcFCS(buf, len + 2, fcs); /* cmd0, cmd1, data */
 	if (fcs != buf[len + 2]) {
 		D("%s:FCS check fail, should %d, but %d", __FUNCTION__, fcs, buf[len + 2]);
@@ -166,7 +166,7 @@ FRAME *MT::recvFrame()
 	frame->len = len;
 	frame->cmd0 = buf[0];
 	frame->cmd1 = buf[1];
-	frame->data = new unsigned char[len];
+	frame->data = new uint8_t[len];
 	memcpy(frame->data, &buf[2], len);
 	D("%s:Get one Frame len=%d,cmd0=0x%x,cmd1=0x%x", __FUNCTION__, frame->len, frame->cmd0, frame->cmd1);
 
@@ -175,11 +175,11 @@ FRAME *MT::recvFrame()
 
 bool MT::threadLoop()
 {
-	unsigned char buf[BUF_SIZE];
+	uint8_t buf[BUF_SIZE];
 	bool receving;
 	int ret;
 	FRAME *frame;
-	unsigned char fcs;
+	uint8_t fcs;
 	int recevied;
 	D("MT::threadLoop start");
 	do {
@@ -256,9 +256,9 @@ out:
 void MT::sigusr1(int sig)
 {
 	int ret;
-	unsigned char sof = 0xFE;
+	uint8_t sof = 0xFE;
 	FRAME *frame = sreq.frame;
-	unsigned char fcs;
+	uint8_t fcs;
 
 	D("sigusr1 enter");
 

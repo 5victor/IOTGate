@@ -16,12 +16,12 @@ using namespace android;
 
 /*
 struct SRSP {
-	unsigned char len;
-	unsigned char cmd0;
-	unsigned char cmd1;
+	uint8_t len;
+	uint8_t cmd0;
+	uint8_t cmd1;
 	union {
-		unsigned char status;
-		unsigned char *data;
+		uint8_t status;
+		uint8_t *data;
 	};
 };
 */
@@ -56,8 +56,8 @@ private:
 private:
 	int initUart(void);
 	int initSignal(void);
-	static unsigned char calcFCS(unsigned char *pMsg,
-			unsigned char len, unsigned char fcs);
+	static uint8_t calcFCS(uint8_t *pMsg,
+			uint8_t len, uint8_t fcs);
 	void handleRecvFrame(FRAME *frame);
 	static void sigusr1(int sig);
 	FRAME *recvFrame();

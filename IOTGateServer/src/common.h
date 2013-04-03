@@ -23,4 +23,24 @@ void inline freeFrame(FRAME *frame)
 	delete frame;
 }
 
+/////////////////////////////////////////////////////////////
+
+#define LOG_TAG "IOTGateServer"
+
+#define LOG_NDEBUG 0
+
+#define LOG_NDEBUG_FUNCTION
+
+#ifndef LOG_NDEBUG_FUNCTION
+#define D(...) ((void)0)
+#else
+#define D(...) (ALOGV(__VA_ARGS__))
+#endif
+
+#define LOG(...) (ALOGV(__VA_ARGS__))
+
+#include <cutils/log.h>
+
+/////////////////////////////////////////////////////////////
+
 #endif /* COMMON_H_ */
