@@ -28,9 +28,19 @@ public:
 	FRAME *waitAREQ(int cmd0, int cmd1);
 	FRAME *waitAREQRelative(int cmd0, int cmd1, nsecs_t reltime);
 
+private:
+	FRAME *sendSREQ(int cmd0, int cmd1);
+	// doesn't free buf
+	FRAME *sendSREQ(int cmd0, int cmd1, int len, unsigned char *buf);
+	unsigned char getRet1Byte(FRAME *frame);
+	unsigned short getRet2Byte(FRAME *frame);
+	int sendAREQ(int cmd0, int cmd1);
+
 public:
 	//MT_SYS
 	int SYS_PING();
+	int SYS_RESET_REQ();
+
 
 public:
 	//MT_SAPI

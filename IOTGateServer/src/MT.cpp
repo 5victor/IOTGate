@@ -157,6 +157,7 @@ FRAME *MT::recvFrame()
 	fcs = calcFCS(buf, len + 2, fcs); /* cmd0, cmd1, data */
 	if (fcs != buf[len + 2]) {
 		D("%s:FCS check fail, should %d, but %d", __FUNCTION__, fcs, buf[len + 2]);
+		D("%s:bad packet len=%d, cmd0=0x%x, cmd1=0x%x", __FUNCTION__, len, buf[0], buf[1]);
 		return NULL;
 	}
 

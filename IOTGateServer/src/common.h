@@ -17,4 +17,10 @@ struct FRAME {
 
 typedef void (*AREQHANDLE)(FRAME *frame);
 
+void inline freeFrame(FRAME *frame)
+{
+	delete frame->data;
+	delete frame;
+}
+
 #endif /* COMMON_H_ */

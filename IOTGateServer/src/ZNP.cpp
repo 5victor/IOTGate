@@ -82,82 +82,6 @@ void ZNP::setINDICATEhandle(INDICATE handle)
 	indicate = handle;
 }
 
-int ZNP::SYS_PING()
-{
-	int ret;
-	FRAME *result;
-	FRAME *frame = new FRAME();
-	frame->len = 0;
-	frame->cmd0 = 0x21;
-	frame->cmd1 = 0x01;
-
-	result = mt->sendSREQ(frame);
-	ret = ((short *)result->data)[0];
-	delete result->data;
-	delete result;
-	return ret;
-}
-
-int ZNP::ZB_WRITE_CONFIGURATION(unsigned char configID, int len, unsigned char *buf)
-{
-	FRAME *result;
-	FRAME *frame = new FRAME();
-	int ret;
-
-	frame->len = len + 2;
-	frame->cmd0 = 0x26;
-	frame->cmd1 = 0x05;
-	frame->data = (unsigned char*)malloc(frame->len);
-	frame->data[0] = configID;
-	frame->data[1] = len;
-	memcpy(&frame->data[2], buf, len);
-
-	//delete buf; may be: int a; &a;
-	result = mt->sendSREQ(frame);
-	ret = ((unsigned char *)result->data)[0];
-	delete result->data;
-	delete result;
-	return ret;
-}
-
-int ZNP::ZB_START_REQUEST()
-{
-	FRAME *frame = new FRAME();
-	FRAME *result;
-	int ret;
-
-	frame->len = 0;
-	frame->cmd0 = 0x26;
-	frame->cmd1 = 0x00;
-
-	result = mt->sendSREQ(frame);
-	ret = ((unsigned char *)result->data)[0];
-	delete result->data;
-	delete result;
-	return ret;
-}
-
-int ZNP::ZDO_IEEE_ADDR_REQ(unsigned short shortaddr, unsigned char type, unsigned char index)
-{
-	FRAME *frame = new FRAME();
-	FRAME *result;
-	int ret;
-
-	frame->len = 4;
-	frame->cmd0 = 0x25;
-	frame->cmd1 = 0x01;
-	frame->data = new unsigned char[4];
-	((unsigned short *)frame->data)[0] = shortaddr;
-	frame->data[2] = type;
-	frame->data[3] = index;
-
-	result = mt->sendSREQ(frame);
-	ret = ((unsigned char *)result->data)[0];
-	delete result->data;
-	delete result;
-	return ret;
-}
-
 void ZNP::handleAREQ(FRAME *frame)
 {
 	D("%s", __FUNCTION__);
@@ -249,3 +173,125 @@ void ZNP::handleAREQZDO(FRAME *frame)
 		break;
 	}
 }
+
+FRAME *ZNP::sendSREQ(int cmd0, int cmd1)
+{
+	FRAME *result;
+	FRAME *frame = new FRAME();
+	frame->len = 0;
+	frame->cmd0 = cmd0;
+	frame->cmd1 = cmd1;
+
+	result = mt->sendSREQ(frame);
+
+	delete frame;
+	return result;
+}
+
+FRAME *ZNP::sendSREQ(int cmd0, int cmd1, int len, unsigned char *buf)
+{
+	FRAME *result;
+	FRAME *frame = new FRAME();
+	frame->len = len;
+	frame->cmd0 = cmd0;
+	frame->cmd1 = cmd1;
+	frame->data = buf;
+	result = mt->sendSREQ(frame);
+
+	//delete frame->data;
+	delete frame;
+	return result;
+}
+
+
+unsigned char ZNP::getRet1Byte(FRAME *frame)
+{
+	return *((unsigned char *)(&frame->data[0]));
+}
+
+unsigned short ZNP::getRet2Byte(FRAME *frame)
+{
+	return *((unsigned short *)(&frame->data[0]));
+}
+
+int ZNP::sendAREQ(int cmd0, int cmd1)
+{
+	int ret;
+	FRAME *frame = new FRAME();
+	frame->len = 0;
+	frame->cmd0 = cmd0;
+	frame->cmd1 = cmd1;
+
+	ret = mt->sendAREQ(frame);
+	delete frame;
+	return ret;
+}
+
+///////////////////////////////////////////////////////////////////////
+
+int ZNP::SYS_RESET_REQ()
+{
+	return sendAREQ(0x41, 0x00);
+}
+
+int ZNP::SYS_PING()
+{
+	int ret;
+	FRAME *result;
+
+	result = sendSREQ(0x21, 0x01);
+	ret = getRet1Byte(result);
+	freeFrame(result);
+	return ret;
+}
+
+int ZNP::ZB_WRITE_CONFIGURATION(unsigned char configID, int len, unsigned char *buf)
+{
+	FRAME *result;
+	int ret;
+
+	unsigned char *data = new unsigned char[len+2];
+
+	data[0] = configID;
+	data[1] = len;
+	memcpy(&data[2], buf, len);
+	result = sendSREQ(0x26, 0x05, len+2, data);
+	delete data;
+
+	ret = getRet1Byte(result);
+	freeFrame(result);
+	return ret;
+}
+
+int ZNP::ZB_START_REQUEST()
+{
+	FRAME *result;
+	int ret;
+
+	result = sendSREQ(0x26, 0x00);
+
+	return !result;
+}
+
+int ZNP::ZDO_IEEE_ADDR_REQ(unsigned short shortaddr, unsigned char type, unsigned char index)
+{
+	FRAME *result;
+	int ret;
+	unsigned char *data;
+
+	data = new unsigned char[4];
+
+	((unsigned short *)data)[0] = shortaddr;
+	data[2] = type;
+	data[3] = index;
+
+	result = sendSREQ(0x25, 0x01, 4, data);
+	delete data;
+
+	ret = getRet1Byte(result);
+	freeFrame(result);
+	return ret;
+}
+
+
+

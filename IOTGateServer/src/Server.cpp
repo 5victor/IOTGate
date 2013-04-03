@@ -35,6 +35,12 @@ int Server::startNetwork(int panid, unsigned int chanlist)
 	int ret;
 	int arg;
 
+	znp->SYS_RESET_REQ();
+	result = znp->waitAREQ(0x41, 0x80);
+
+	D("%s:SYS_RESET_REQ:0x%x", __FUNCTION__, *((unsigned *)&result->data[1]));
+	freeFrame(result);
+
 	//ZCD_NV_LOGICAL_TYPE
 	arg = 0; //COORDINATOR(0x00), ROUTER (0x01) or ENDDEVICE (0x02)
 	ret = znp->ZB_WRITE_CONFIGURATION(0x87, 1, (unsigned char *)&arg);
