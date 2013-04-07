@@ -172,6 +172,7 @@ int Server::getNodeEndpoints(uint16_t nwkaddr, vector<Endpoint *> &endpoints)
 	uint8_t *eplist;
 	int epcount;
 
+	D("%s", __PRETTY_FUNCTION__);
 	ret = znp->ZDO_ACTIVE_EP_REQ(nwkaddr);
 	if (ret) {
 		LOG("%s:ZDO_ACTIVE_EP_REQ fail %d", __FUNCTION__, ret);
@@ -203,6 +204,7 @@ Endpoint *Server::getEndpoint(uint16_t nwkaddr, int index)
 	FRAME *result;
 	uint8_t *data;
 
+	D("%s", __PRETTY_FUNCTION__);
 	ret = znp->ZDO_SIMPLE_DESC_REQ(nwkaddr, index);
 	if (ret) {
 		D("%s:ZDO_SIMPLE_DESC_REQ fail %d", __FUNCTION__, ret);
