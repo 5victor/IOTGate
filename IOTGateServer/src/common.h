@@ -43,4 +43,6 @@ void inline freeFrame(FRAME *frame)
 
 /////////////////////////////////////////////////////////////
 
+#define MAX_CLUSTER 32
+
 #endif /* COMMON_H_ */

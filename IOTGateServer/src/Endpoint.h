@@ -9,6 +9,7 @@
 #define ENDPOINT_H_
 
 #include <stdint.h>
+#include "common.h"
 
 class Endpoint {
 public:
@@ -28,7 +29,6 @@ public:
 	void setOutClusters(int num, uint16_t list[]);
 	int getOutClusters(uint16_t **list);
 private:
-#define MAX_CLUSTER 32
 	uint8_t index;
 	uint16_t nwkaddr;
 	uint16_t profileid;

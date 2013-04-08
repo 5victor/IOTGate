@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include "Server.h"
+#include "SocketServer.h"
 
 int main()
 {
@@ -22,13 +23,11 @@ int main()
 	ret = server->startNetwork(513);
 	D("startNetwork:%d\n", ret);
 
+	SocketServer *socketserver = new SocketServer();
 
-	znp = server->getZNP();
-
-	znp->ZDO_IEEE_ADDR_REQ(0xFFFC, 1, 0);
-	znp->ZDO_IEEE_ADDR_REQ(0x1234, 0, 0);
-
-	while(1);
+	server->setSocketServer(socketserver);
+	socketserver->init(server);
+	socketserver->threadLoop();
 
 	return 0;
 }

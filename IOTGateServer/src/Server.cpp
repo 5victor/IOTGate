@@ -24,6 +24,11 @@ int Server::initServer()
 	return znp->initZNP(this);
 }
 
+void Server::setSocketServer(SocketServer *ss)
+{
+	socketserver = ss;
+}
+
 void Server::startServer()
 {
 	this->run();

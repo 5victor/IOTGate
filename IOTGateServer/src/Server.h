@@ -15,8 +15,11 @@ using namespace android;
 using namespace std;
 #include "Node.h"
 #include "ZNP.h"
+#include "SocketServer.h"
 
 class ZNP;
+
+class SocketServer;
 
 class Server : public Thread {
 public:
@@ -26,6 +29,7 @@ public:
 	void startServer();
 	ZNP *getZNP();
 	int startNetwork(int panid, unsigned int chanlist = 0x00008000);
+	void setSocketServer(SocketServer *ss);
 
 //commit command, run in threadLoop()
 public:
@@ -47,6 +51,7 @@ private:
 private:
 	vector<Node *> nodes;
 	ZNP *znp;
+	SocketServer *socketserver;
 
 private:
 	enum Command {FOUND_NODE,};
